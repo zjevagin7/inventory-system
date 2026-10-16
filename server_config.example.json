@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "initialized": false,
+  "organization": "organization.json",
+  "created_at": null,
+  "max_concurrent": 3,
+  "blacklist": {
+    "inns": [],
+    "notes": {}
+  }
+}

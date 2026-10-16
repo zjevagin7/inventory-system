@@ -1,0 +1,13 @@
+[Unit]
+Description=Inventory Web Server (ALPHA)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/inventory/web
+ExecStart=/opt/inventory/web/inventory-web
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

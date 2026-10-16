@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Инвентарь</title>
+	<style>
+		* { box-sizing: border-box; }
+		body { font-family: -apple-system, Roboto, sans-serif; margin: 0; padding: 20px;
+			background: #f5f5f5; color: #222; }
+		h1 { color: #d32f2f; margin: 0 0 20px; }
+		h2 { color: #333; margin: 0 0 15px; }
+		.box { background: #fff; border-radius: 12px; padding: 20px;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
+		.btn { display: inline-block; background: #4CAF50; color: #fff;
+			padding: 10px 20px; border-radius: 8px; text-decoration: none;
+			margin-right: 10px; border: none; cursor: pointer; font-size: 14px; }
+		.btn:hover { background: #388E3C; }
+		.btn-red { background: #d32f2f; }
+		.btn-red:hover { background: #b71c1c; }
+		.btn-blue { background: #1976D2; }
+		.btn-blue:hover { background: #1565C0; }
+		.btn-sm { padding: 4px 10px; font-size: 12px; }
+		table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+		th, td { padding: 8px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+		th { background: #f9f9f9; font-weight: 600; }
+		.project-card {
+			background: #fff; border-radius: 12px; padding: 20px;
+			margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+			cursor: pointer; transition: transform 0.2s;
+		}
+		.project-card:hover { transform: translateY(-2px); }
+		.warehouse-card {
+			background: #fff; border-radius: 10px; padding: 15px;
+			margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+			cursor: pointer; border-left: 4px solid #4CAF50;
+		}
+		.warehouse-card:hover { background: #f9f9f9; }
+		.warehouse-name { font-size: 16px; font-weight: 600; color: #333; }
+		.warehouse-info { font-size: 12px; color: #999; margin-top: 5px; }
+		.project-name { font-size: 20px; font-weight: 600; color: #d32f2f; }
+		.project-id { font-size: 12px; color: #999; }
+		.hidden { display: none; }
+		.favicon-placeholder { color: #ccc; font-size: 20px; }
+		.deviation-negative { color: #d32f2f; font-weight: 600; }
+		.deviation-positive { color: #388E3C; font-weight: 600; }
+		.form-box { margin-top: 15px; padding: 15px; background: #f9f9f9; border-radius: 8px; }
+		.form-box input, .form-box select { width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+		#timesheetList { overflow-x: auto; }
+		#timesheetList table { font-size: 12px; }
+		#timesheetList th, #timesheetList td { padding: 4px; }
+	</style>
+</head>
+<body>
+	<h1>📦 Инвентарь</h1>
+	<div id="userInfo" style="font-size: 14px; color: #666; margin-bottom: 15px;"></div>
+
+	<!-- ПРОЕКТЫ -->
+	<div id="projectsView" class="box">
+		<h2>Проекты</h2>
+		<div id="projectsList">Загрузка...</div>
+	</div>
+
+	<!-- СКЛАДЫ -->
+	<div id="warehousesView" class="box hidden">
+		<h2 id="warehousesTitle">Склады</h2>
+		<button onclick="showProjects()" class="btn btn-blue">← Назад к проектам</button>
+		<button id="btnWorkers" onclick="showWorkers()" class="btn btn-blue" style="margin-left: 10px; display: none;">👥 Работники</button>
+		<button id="btnTimesheet" onclick="showTimesheet()" class="btn btn-blue" style="margin-left: 10px; display: none;">📅 Табель</button>
+		<button id="btnBackup" onclick="collectBackup()" class="btn btn-blue" style="margin-left: 10px; display: none;">📦 Собрать базу</button>
+		<div id="backupStatus" style="margin-top: 15px; display: none; padding: 15px; background: #FFF3CD; border-radius: 8px;">
+			<div id="backupText">Идёт сбор данных...</div>
+			<div id="backupResult" style="margin-top: 10px; display: none;">
+				<a id="backupLink" href="#" target="_blank" class="btn" style="background: #1976D2;">⬇️ Скачать базу</a>
+				<div id="backupTimer" style="font-size: 12px; color: #666; margin-top: 5px;"></div>
+			</div>
+		</div>
+		<div style="margin-top: 15px;">
+			<button id="btnAddWarehouse" onclick="showAddWarehouseForm()" class="btn" style="display: none;">➕ Создать склад</button>
+		</div>
+		<div id="addWarehouseForm" class="form-box hidden">
+			<h3>Создать склад</h3>
+			<input type="text" id="whName" placeholder="Название склада *">
+			<select id="whType">
+				<option value="organization">Склад организации</option>
+				<option value="project">Склад проекта</option>
+				<option value="materials">Общий склад материалов</option>
+			</select>
+			<input type="text" id="whResponsible" placeholder="Ответственный (почта)">
+			<input type="text" id="whDescription" placeholder="Описание">
+			<button onclick="addWarehouse()" class="btn">💾 Сохранить</button>
+			<button onclick="hideAddWarehouseForm()" class="btn btn-red">Отмена</button>
+		</div>
+		<div id="warehousesList" style="margin-top: 15px;">Загрузка...</div>
+	</div>
+
+	<!-- ПРЕДМЕТЫ -->
+	<div id="itemsView" class="box hidden">
+		<h2 id="itemsTitle">Предметы</h2>
+		<button onclick="showWarehouses(currentProject, currentProjectName)" class="btn btn-blue">← Назад к складам</button>
+		<div style="margin-top: 15px;">
+			<button id="btnAddItem" onclick="showAddItemForm()" class="btn" style="display: none;">➕ Добавить предмет</button>
+			<button id="btnExportSklad" onclick="exportItems()" class="btn btn-blue" style="display: none;">📥 Скачать склад (Excel)</button>
+		</div>
+		<div id="addItemForm" class="form-box hidden">
+			<h3>Добавить предмет</h3>
+			<input type="text" id="itemName" placeholder="Наименование *">
+			<input type="text" id="itemCharacteristic" placeholder="Характеристика">
+			<input type="text" id="itemSerial" placeholder="Серийный номер (опционально)">
+			<input type="text" id="itemUnit" placeholder="Ед. изм. (шт, м, кг)">
+			<select id="itemLocation">
+				<option value="На складе">На складе</option>
+				<option value="На руках">На руках</option>
+				<option value="На объекте">На объекте</option>
+				<option value="В ремонте">В ремонте</option>
+				<option value="Списан">Списан</option>
+			</select>
+			<input type="text" id="itemHolderName" placeholder="ФИО (если на руках)">
+			<button onclick="addItem()" class="btn">💾 Сохранить</button>
+			<button onclick="hideAddItemForm()" class="btn btn-red">Отмена</button>
+		</div>
+		<div id="itemsList" style="margin-top: 15px;">Загрузка...</div>
+	</div>
+
+	<!-- РАБОТНИКИ -->
+	<div id="workersView" class="box hidden">
+		<h2 id="workersTitle">Работники проекта</h2>
+		<button onclick="showWarehouses(currentProject, currentProjectName)" class="btn btn-blue">← Назад к складам</button>
+		<div style="margin-top: 15px;">
+			<button id="btnAddWorker" onclick="showAddWorkerForm()" class="btn" style="display: none;">➕ Добавить работника</button>
+		</div>
+		<div id="addWorkerForm" class="form-box hidden">
+			<h3>Добавить работника</h3>
+			<input type="text" id="workerTab" placeholder="Табельный номер">
+			<input type="text" id="workerName" placeholder="ФИО *">
+			<select id="workerRole">
+				<option value="">— без роли —</option>
+				<option value="accountant">Бухгалтер</option>
+				<option value="director">Директор</option>
+				<option value="chief">Начальник проекта</option>
+				<option value="storekeeper">Кладовщик</option>
+				<option value="worker">Рабочий</option>
+			</select>
+			<input type="text" id="workerPosition" placeholder="Должность">
+			<input type="text" id="workerCardUID" placeholder="UID карты (опционально)">
+			<button onclick="addWorker()" class="btn">💾 Сохранить</button>
+			<button onclick="hideAddWorkerForm()" class="btn btn-red">Отмена</button>
+		</div>
+		<div id="workersList" style="margin-top: 15px;">Загрузка...</div>
+	</div>
+
+	<!-- ТАБЕЛЬ -->
+	<div id="timesheetView" class="box hidden">
+		<h2 id="timesheetTitle">Табель</h2>
+		<button onclick="showWarehouses(currentProject, currentProjectName)" class="btn btn-blue">← Назад к складам</button>
+		<div style="margin-top: 15px;">
+			<label style="font-size: 14px;">Месяц: </label>
+			<input type="month" id="tsMonth" value="2026-10" onchange="loadTimesheetData()" style="padding: 8px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px;">
+			<button onclick="exportTimesheet()" class="btn btn-blue" style="margin-left: 10px;">📥 Скачать табель (Excel)</button>
+		</div>
+		<div id="timesheetList" style="margin-top: 15px;">Загрузка...</div>
+	</div>
+
+	<div style="margin-top: 20px;">
+		<a href="/admin" id="btnAdmin" class="btn btn-blue" style="display: none;">⚙️ Админка</a>
+		<a href="/" class="btn btn-red">Выйти</a>
+	</div>
+
+	<script>
+		let currentProject = null;
+		let currentProjectName = null;
+		let currentWarehouse = null;
+		let currentWarehouseName = null;
+		let currentRole = '';
+		let currentEmail = '';
+
+		// ---------- РОЛЬ ----------
+		async function loadRole() {
+			const r = await fetch('/api/me');
+			if (!r.ok) {
+				window.location.href = '/';
+				return;
+			}
+			const data = await r.json();
+			currentRole = data.role || '';
+			currentEmail = data.email || '';
+
+			const roleNames = {
+				admin: 'Админ',
+				accountant: 'Бухгалтер',
+				director: 'Директор',
+				chief: 'Начальник проекта',
+				storekeeper: 'Кладовщик',
+				worker: 'Рабочий'
+			};
+			const roleName = roleNames[currentRole] || currentRole;
+			document.getElementById('userInfo').innerHTML =
+				'👤 <b>' + currentEmail + '</b> — <span style="color: #d32f2f;">' + roleName + '</span>';
+		}
+
+		function getRole() { return currentRole; }
+
+		function canEditItems() {
+			const role = getRole();
+			return (role === 'admin' || role === 'accountant' || role === 'director' || role === 'chief' || role === 'storekeeper');
+		}
+		function canEditWorkers() {
+			const role = getRole();
+			return (role === 'admin' || role === 'accountant' || role === 'director' || role === 'chief');
+		}
+		function canEditTimesheet() {
+			const role = getRole();
+			return (role === 'admin' || role === 'accountant' || role === 'director' || role === 'chief');
+		}
+		function canBackup() { return getRole() === 'admin'; }
+
+		function applyRole() {
+			const role = getRole();
+			if (canEditItems()) {
+				document.getElementById('btnAddWarehouse').style.display = 'inline-block';
+				document.getElementById('btnAddItem').style.display = 'inline-block';
+				document.getElementById('btnExportSklad').style.display = 'inline-block';
+			}
+			if (canEditWorkers()) {
+				document.getElementById('btnWorkers').style.display = 'inline-block';
+				document.getElementById('btnAddWorker').style.display = 'inline-block';
+			}
+			if (canEditTimesheet()) {
+				document.getElementById('btnTimesheet').style.display = 'inline-block';
+			}
+			if (canBackup()) {
+				document.getElementById('btnBackup').style.display = 'inline-block';
+			}
+			if (role === 'admin') {
+				document.getElementById('btnAdmin').style.display = 'inline-block';
+			}
+		}
+
+		// ---------- МОДАЛЬНОЕ ОКНО СКАЧИВАНИЯ ----------
+		async function downloadViaDisk(apiURL, label) {
+			let modal = document.getElementById('dlModal');
+			if (!modal) {
+				modal = document.createElement('div');
+				modal.id = 'dlModal';
+				modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;';
+				modal.innerHTML = '<div style="background:#fff;padding:30px;border-radius:12px;max-width:400px;text-align:center;">' +
+					'<div id="dlTitle" style="font-size:18px;font-weight:600;margin-bottom:15px;"></div>' +
+					'<div id="dlStatus" style="font-size:14px;color:#666;margin-bottom:15px;"></div>' +
+					'<a id="dlLink" href="#" target="_blank" class="btn" style="display:none;background:#1976D2;">⬇️ Скачать</a>' +
+					'<div id="dlTimer" style="font-size:12px;color:#999;margin-top:10px;"></div>' +
+					'<button onclick="closeDlModal()" class="btn btn-red" style="margin-top:15px;">Закрыть</button>' +
+				'</div>';
+				document.body.appendChild(modal);
+			}
+			modal.style.display = 'flex';
+			document.getElementById('dlTitle').textContent = '📦 Выгрузка: ' + label;
+			document.getElementById('dlStatus').textContent = '⏳ Формируется файл и загружается на Яндекс.Диск...';
+			document.getElementById('dlLink').style.display = 'none';
+			document.getElementById('dlTimer').textContent = '';
+
+			try {
+				const r = await fetch(apiURL);
+				const data = await r.json();
+				if (!r.ok) {
+					document.getElementById('dlStatus').textContent = '❌ Ошибка: ' + (data.error || r.statusText);
+					return;
+				}
+				document.getElementById('dlStatus').textContent = '✅ Файл готов. Ссылка живёт 5 минут.';
+				const linkEl = document.getElementById('dlLink');
+				linkEl.href = data.url;
+				linkEl.style.display = 'inline-block';
+				linkEl.onclick = () => { setTimeout(closeDlModal, 1000); };
+
+				let seconds = data.expires_in || 300;
+				function tick() {
+					if (seconds <= 0) {
+						document.getElementById('dlTimer').textContent = '⏰ Ссылка истекла.';
+						linkEl.style.display = 'none';
+						return;
+					}
+					const m = Math.floor(seconds / 60);
+					const s = seconds % 60;
+					document.getElementById('dlTimer').textContent = 'Ссылка действительна: ' + m + ':' + (s < 10 ? '0' : '') + s;
+					seconds--;
+					setTimeout(tick, 1000);
+				}
+				tick();
+			} catch (err) {
+				document.getElementById('dlStatus').textContent = '❌ Ошибка сети: ' + err.message;
+			}
+		}
+
+		function closeDlModal() {
+			const modal = document.getElementById('dlModal');
+			if (modal) modal.style.display = 'none';
+		}
+
+		// ---------- ПРОЕКТЫ ----------
+		async function loadProjects() {
+			const r = await fetch('/api/projects');
+			const projects = await r.json();
+			let html = '';
+			for (const p of projects) {
+				html += '<div class="project-card" onclick="showWarehouses(\'' + p.id + '\', \'' + p.name + '\')">' +
+					'<div class="project-name">📁 ' + p.name + '</div>' +
+					'<div class="project-id">ID: ' + p.id + ' | Статус: ' + p.status + '</div>' +
+				'</div>';
+			}
+			if (!html) html = '<p>Нет проектов</p>';
+			document.getElementById('projectsList').innerHTML = html;
+		}
+
+		// ---------- СКЛАДЫ ----------
+		async function showWarehouses(projectId, projectName) {
+			currentProject = projectId;
+			currentProjectName = projectName;
+			document.getElementById('projectsView').classList.add('hidden');
+			document.getElementById('itemsView').classList.add('hidden');
+			document.getElementById('workersView').classList.add('hidden');
+			document.getElementById('timesheetView').classList.add('hidden');
+			document.getElementById('warehousesView').classList.remove('hidden');
+			document.getElementById('addWarehouseForm').classList.add('hidden');
+			document.getElementById('warehousesTitle').textContent = 'Склады проекта: ' + projectName;
+
+			const r = await fetch('/api/warehouses?project=' + projectId);
+			const data = await r.json();
+			let html = '';
+			for (const w of data.warehouses) {
+				html += '<div class="warehouse-card" onclick="showItems(\'' + w.id + '\', \'' + w.name + '\')">' +
+					'<div class="warehouse-name">📦 ' + w.name + '</div>' +
+					'<div class="warehouse-info">Тип: ' + w.type + ' | Ответственный: ' + w.responsible + '</div>' +
+				'</div>';
+			}
+			if (!html) html = '<p>Нет складов</p>';
+			document.getElementById('warehousesList').innerHTML = html;
+			applyRole();
+		}
+
+		function showAddWarehouseForm() { document.getElementById('addWarehouseForm').classList.remove('hidden'); }
+		function hideAddWarehouseForm() { document.getElementById('addWarehouseForm').classList.add('hidden'); }
+		async function addWarehouse() {
+			const body = new URLSearchParams({
+				project: currentProject,
+				name: document.getElementById('whName').value,
+				type: document.getElementById('whType').value,
+				responsible: document.getElementById('whResponsible').value,
+				description: document.getElementById('whDescription').value
+			});
+			const r = await fetch('/api/warehouses/add', {method: 'POST', body});
+			alert(await r.text());
+			hideAddWarehouseForm();
+			showWarehouses(currentProject, currentProjectName);
+		}
+
+		// ---------- ПРЕДМЕТЫ ----------
+		async function showItems(warehouseId, warehouseName) {
+			currentWarehouse = warehouseId;
+			currentWarehouseName = warehouseName;
+			document.getElementById('warehousesView').classList.add('hidden');
+			document.getElementById('workersView').classList.add('hidden');
+			document.getElementById('timesheetView').classList.add('hidden');
+			document.getElementById('itemsView').classList.remove('hidden');
+			document.getElementById('addItemForm').classList.add('hidden');
+			document.getElementById('itemsTitle').textContent = 'Предметы склада: ' + warehouseName;
+
+			const r = await fetch('/api/items?project=' + currentProject + '&warehouse=' + warehouseId);
+			const data = await r.json();
+			let html = '<table><tr>' +
+				'<th>Фото</th><th>Наименование</th><th>Характеристика</th><th>Серийник</th>' +
+				'<th>Ед.</th><th>По учёту</th><th>По факту</th><th>Отклонение</th><th>Место</th><th></th>' +
+			'</tr>';
+			for (const it of data.items) {
+				const devClass = it.deviation < 0 ? 'deviation-negative' : (it.deviation > 0 ? 'deviation-positive' : '');
+				const favicon = it.favicon ? '<img src="/' + it.favicon + '" width="32" height="32">' : '<span class="favicon-placeholder">❓</span>';
+				html += '<tr>' +
+					'<td>' + favicon + '</td>' +
+					'<td>' + it.name + '</td>' +
+					'<td>' + it.characteristic + '</td>' +
+					'<td>' + it.serial + '</td>' +
+					'<td>' + it.unit + '</td>' +
+					'<td>' + it.qty_planned + '</td>' +
+					'<td>' + it.qty_actual + '</td>' +
+					'<td class="' + devClass + '">' + it.deviation + '</td>' +
+					'<td>' + it.location + (it.location_detail ? ' (' + it.location_detail + ')' : '') + '</td>' +
+					'<td>' + (canEditItems() ? '<button onclick="deleteItem(\'' + it.id + '\')" class="btn btn-sm btn-red">🗑️</button>' : '') + '</td>' +
+				'</tr>';
+			}
+			html += '</table>';
+			if (data.items.length === 0) html = '<p>Нет предметов</p>';
+			document.getElementById('itemsList').innerHTML = html;
+			applyRole();
+		}
+
+		function showAddItemForm() { document.getElementById('addItemForm').classList.remove('hidden'); }
+		function hideAddItemForm() { document.getElementById('addItemForm').classList.add('hidden'); }
+		async function addItem() {
+			const body = new URLSearchParams({
+				project: currentProject,
+				warehouse: currentWarehouse,
+				name: document.getElementById('itemName').value,
+				characteristic: document.getElementById('itemCharacteristic').value,
+				serial: document.getElementById('itemSerial').value,
+				unit: document.getElementById('itemUnit').value,
+				location: document.getElementById('itemLocation').value,
+				holder_name: document.getElementById('itemHolderName').value
+			});
+			const r = await fetch('/api/items/add', {method: 'POST', body});
+			alert(await r.text());
+			hideAddItemForm();
+			showItems(currentWarehouse, currentWarehouseName);
+		}
+		async function deleteItem(id) {
+			if (!confirm('Удалить предмет ' + id + '?')) return;
+			const body = new URLSearchParams({project: currentProject, id});
+			const r = await fetch('/api/items/delete', {method: 'POST', body});
+			alert(await r.text());
+			showItems(currentWarehouse, currentWarehouseName);
+		}
+		async function exportItems() {
+			if (!currentProject || !currentWarehouse) { alert('Сначала выбери склад'); return; }
+			await downloadViaDisk('/api/items/export?project=' + currentProject + '&warehouse=' + currentWarehouse, 'склад');
+		}
+
+		// ---------- РАБОТНИКИ ----------
+		async function showWorkers() {
+			document.getElementById('warehousesView').classList.add('hidden');
+			document.getElementById('itemsView').classList.add('hidden');
+			document.getElementById('timesheetView').classList.add('hidden');
+			document.getElementById('workersView').classList.remove('hidden');
+			document.getElementById('addWorkerForm').classList.add('hidden');
+			document.getElementById('workersTitle').textContent = 'Работники проекта: ' + currentProjectName;
+
+			const r = await fetch('/api/workers?project=' + currentProject);
+			const data = await r.json();
+			let html = '<table><tr>' +
+				'<th>Табельный</th><th>ФИО</th><th>Роль</th><th>Должность</th><th>Карта</th><th></th>' +
+			'</tr>';
+			for (const wk of data.workers) {
+				html += '<tr>' +
+					'<td>' + (wk.tab || '—') + '</td>' +
+					'<td>' + wk.name + '</td>' +
+					'<td>' + (wk.role || '—') + '</td>' +
+					'<td>' + (wk.position || '—') + '</td>' +
+					'<td>' + (wk.card_uid || '—') + '</td>' +
+					'<td>' + (canEditWorkers() ? '<button onclick="deleteWorker(\'' + wk.tab + '\', \'' + wk.name + '\')" class="btn btn-sm btn-red">🗑️</button>' : '') + '</td>' +
+				'</tr>';
+			}
+			html += '</table>';
+			if (data.workers.length === 0) html = '<p>Нет работников</p>';
+			document.getElementById('workersList').innerHTML = html;
+			applyRole();
+		}
+
+		function showAddWorkerForm() { document.getElementById('addWorkerForm').classList.remove('hidden'); }
+		function hideAddWorkerForm() { document.getElementById('addWorkerForm').classList.add('hidden'); }
+		async function addWorker() {
+			const body = new URLSearchParams({
+				project: currentProject,
+				tab: document.getElementById('workerTab').value,
+				name: document.getElementById('workerName').value,
+				role: document.getElementById('workerRole').value,
+				position: document.getElementById('workerPosition').value,
+				card_uid: document.getElementById('workerCardUID').value
+			});
+			const r = await fetch('/api/workers/add', {method: 'POST', body});
+			alert(await r.text());
+			hideAddWorkerForm();
+			showWorkers();
+		}
+		async function deleteWorker(tab, name) {
+			if (!confirm('Удалить работника ' + name + '?')) return;
+			const body = new URLSearchParams({project: currentProject, tab, name});
+			const r = await fetch('/api/workers/delete', {method: 'POST', body});
+			alert(await r.text());
+			showWorkers();
+		}
+
+		// ---------- ТАБЕЛЬ ----------
+		async function showTimesheet() {
+			document.getElementById('warehousesView').classList.add('hidden');
+			document.getElementById('itemsView').classList.add('hidden');
+			document.getElementById('workersView').classList.add('hidden');
+			document.getElementById('timesheetView').classList.remove('hidden');
+			document.getElementById('timesheetTitle').textContent = 'Табель проекта: ' + currentProjectName;
+			loadTimesheetData();
+			applyRole();
+		}
+
+		async function loadTimesheetData() {
+			const month = document.getElementById('tsMonth').value;
+			if (!month) return;
+			const r = await fetch('/api/timesheet?project=' + currentProject + '&month=' + month);
+			const data = await r.json();
+
+			let header = '<tr><th style="min-width: 150px;">Работник</th>';
+			for (let d = 1; d <= 31; d++) header += '<th style="min-width: 32px; text-align: center;">' + d + '</th>';
+			header += '<th style="min-width: 60px;">Итого</th></tr>';
+
+			let html = '<table>' + header;
+			for (const emp of data.employees) {
+				html += '<tr><td>' + emp.name + '<br><small style="color:#999;">таб. ' + emp.tab + '</small></td>';
+				for (let d = 1; d <= 31; d++) {
+					const dayStr = String(d);
+					let val = '';
+					let cls = '';
+					if (emp.days && emp.days[dayStr] !== undefined) val = emp.days[dayStr];
+					else if (emp.notes && emp.notes[dayStr]) { val = emp.notes[dayStr]; cls = 'color: #999;'; }
+					const editable = canEditTimesheet();
+					const onclick = editable ? 'onclick="editTimesheetCell(\'' + emp.tab + '\', ' + d + ')"' : '';
+					html += '<td style="text-align: center; cursor: ' + (editable ? 'pointer' : 'default') + '; ' + cls + '" ' + onclick + '>' + val + '</td>';
+				}
+				html += '<td style="text-align: center; font-weight: bold;">' + (emp.total_hours || 0) + '</td></tr>';
+			}
+			html += '</table>';
+			document.getElementById('timesheetList').innerHTML = html;
+		}
+
+		async function editTimesheetCell(tab, day) {
+			const month = document.getElementById('tsMonth').value;
+			const current = prompt('Часы для дня ' + day + ' (число, "В" — выходной, "Н" — неявка, пусто — очистить):');
+			if (current === null) return;
+			const body = new URLSearchParams({project: currentProject, month, tab, day});
+			const trimmed = current.trim();
+			if (trimmed === 'В' || trimmed === 'Н') body.append('note', trimmed);
+			else if (trimmed !== '') body.append('hours', trimmed);
+			const r = await fetch('/api/timesheet/set', {method: 'POST', body});
+			if (!r.ok) alert(await r.text());
+			loadTimesheetData();
+		}
+
+		async function exportTimesheet() {
+			if (!currentProject) { alert('Сначала выбери проект'); return; }
+			const month = document.getElementById('tsMonth').value;
+			if (!month) { alert('Выбери месяц'); return; }
+			await downloadViaDisk('/api/timesheet/export?project=' + currentProject + '&month=' + month, 'табель');
+		}
+
+		// ---------- СБОРКА БАЗЫ ----------
+		async function collectBackup() {
+			const statusBox = document.getElementById('backupStatus');
+			const textEl = document.getElementById('backupText');
+			const resultEl = document.getElementById('backupResult');
+			const linkEl = document.getElementById('backupLink');
+			const timerEl = document.getElementById('backupTimer');
+
+			statusBox.style.display = 'block';
+			resultEl.style.display = 'none';
+			linkEl.style.display = 'inline-block';
+			textEl.textContent = '⏳ Идёт сбор данных...';
+
+			try {
+				const body = new URLSearchParams({project: currentProject});
+				const r = await fetch('/api/backup/collect', {method: 'POST', body});
+				const data = await r.json();
+				if (!r.ok) { textEl.textContent = '❌ Ошибка: ' + (data.error || r.statusText); return; }
+				textEl.textContent = '✅ База собрана. Ссылка живёт 5 минут.';
+				linkEl.href = data.url;
+				resultEl.style.display = 'block';
+				let seconds = data.expires_in || 300;
+				function tick() {
+					if (seconds <= 0) { timerEl.textContent = '⏰ Ссылка истекла.'; linkEl.style.display = 'none'; return; }
+					const m = Math.floor(seconds / 60);
+					const s = seconds % 60;
+					timerEl.textContent = 'Ссылка действительна: ' + m + ':' + (s < 10 ? '0' : '') + s;
+					seconds--;
+					setTimeout(tick, 1000);
+				}
+				tick();
+			} catch (err) {
+				textEl.textContent = '❌ Ошибка сети: ' + err.message;
+			}
+		}
+
+		// ---------- ОБЩЕЕ ----------
+		function showProjects() {
+			document.getElementById('projectsView').classList.remove('hidden');
+			document.getElementById('warehousesView').classList.add('hidden');
+			document.getElementById('itemsView').classList.add('hidden');
+			document.getElementById('workersView').classList.add('hidden');
+			document.getElementById('timesheetView').classList.add('hidden');
+		}
+
+		async function init() {
+			await loadRole();
+			applyRole();
+			loadProjects();
+		}
+		init();
+	</script>
+</body>
+</html>

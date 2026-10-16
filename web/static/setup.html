@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Настройка сервера</title>
+	<style>
+		* { box-sizing: border-box; }
+		body {
+			font-family: -apple-system, Roboto, sans-serif;
+			margin: 0; padding: 20px;
+			background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+			min-height: 100vh;
+			display: flex;
+			align-items: flex-start;
+			justify-content: center;
+		}
+		.container {
+			background: #fff;
+			border-radius: 20px;
+			padding: 30px;
+			max-width: 600px;
+			width: 100%;
+			box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+			margin: 20px 0;
+		}
+		h1 {
+			font-size: 24px;
+			margin: 0 0 10px;
+			color: #d32f2f;
+		}
+		.subtitle {
+			font-size: 14px;
+			color: #777;
+			margin: 0 0 25px;
+		}
+		label {
+			display: block;
+			font-size: 14px;
+			color: #555;
+			margin-bottom: 5px;
+			margin-top: 15px;
+		}
+		input, select {
+			width: 100%;
+			padding: 12px;
+			font-size: 16px;
+			border: 1px solid #ccc;
+			border-radius: 8px;
+			background: #fafafa;
+		}
+		input:focus, select:focus {
+			outline: none;
+			border-color: #fc3f1d;
+			background: #fff;
+		}
+		.req::after { content: " *"; color: #e53935; }
+		.hint { font-size: 12px; color: #999; margin-top: 4px; }
+		.btn {
+			display: block;
+			width: 100%;
+			padding: 14px;
+			font-size: 16px;
+			font-weight: bold;
+			border: none;
+			border-radius: 8px;
+			color: #fff;
+			cursor: pointer;
+			margin-top: 25px;
+			background: #fc3f1d;
+		}
+		.btn:hover { background: #e03517; }
+		.section {
+			border-top: 1px solid #eee;
+			margin-top: 20px;
+			padding-top: 15px;
+		}
+		.section-title {
+			font-weight: bold;
+			font-size: 16px;
+			color: #333;
+			margin: 0 0 10px;
+		}
+		.license {
+			background: #f9f9f9;
+			border: 1px solid #eee;
+			border-radius: 8px;
+			padding: 15px;
+			font-size: 13px;
+			color: #555;
+			max-height: 200px;
+			overflow-y: auto;
+			margin-top: 15px;
+		}
+		.checkbox-row {
+			display: flex;
+			align-items: flex-start;
+			margin-top: 15px;
+			gap: 10px;
+		}
+		.checkbox-row input {
+			width: auto;
+			margin-top: 3px;
+		}
+		.msg { padding: 12px; border-radius: 8px; margin-top: 15px; font-size: 14px; display: none; }
+		.msg.ok { background: #E8F5E9; color: #2E7D32; display: block; }
+		.msg.err { background: #FFEBEE; color: #C62828; display: block; }
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>Настройка сервера</h1>
+		<p class="subtitle">Первоначальная конфигурация. Выполняется один раз.</p>
+
+		<form id="setupForm">
+			<div class="section-title">Организация</div>
+
+			<label class="req">Название компании</label>
+			<input type="text" name="name" placeholder="АО «Кубань-Тепло»" required>
+
+			<label class="req">ИНН</label>
+			<input type="text" name="inn" placeholder="2310050439" required>
+
+			<label>Логотип (опционально)</label>
+			<input type="file" name="logo" accept="image/*">
+			<div class="hint">PNG или JPG. Можно пропустить.</div>
+
+			<div class="section">
+				<div class="section-title">Ответственные</div>
+
+				<label class="req">ФИО главного бухгалтера</label>
+				<input type="text" name="accountant_name" placeholder="Петрова П.П." required>
+
+				<label class="req">Почта главного бухгалтера</label>
+				<input type="email" name="accountant_email" placeholder="buh@yandex.ru" required>
+				<div class="hint">Только Яндекс. Почта!</div>
+
+				<label>Табельный номер главбуха</label>
+				<input type="text" name="accountant_tab" placeholder="1234">
+
+				<label class="req">ФИО кладовщика</label>
+				<input type="text" name="storekeeper_name" placeholder="Иванов И.И." required>
+
+				<label class="req">Почта кладовщика</label>
+				<input type="email" name="storekeeper_email" placeholder="sklad@yandex.ru" required>
+				<div class="hint">Только Яндекс. Почта!</div>
+
+				<label>Табельный номер кладовщика</label>
+				<input type="text" name="storekeeper_tab" placeholder="1235">
+
+				<label class="req">ФИО начальника службы</label>
+				<input type="text" name="chief_name" placeholder="Сидоров С.С." required>
+
+				<label class="req">Почта начальника службы</label>
+				<input type="email" name="chief_email" placeholder="nach@yandex.ru" required>
+				<div class="hint">Только Яндекс. Почта!</div>
+
+				<label>Табельный номер начальника</label>
+				<input type="text" name="chief_tab" placeholder="1236">
+
+				<label>ФИО директора (опционально)</label>
+				<input type="text" name="director_name" placeholder="Петров П.П.">
+
+				<label>Почта директора (опционально)</label>
+				<input type="email" name="director_email" placeholder="dir@yandex.ru">
+				<div class="hint">Только Яндекс. Почта!</div>
+
+				<label>Табельный номер директора</label>
+				<input type="text" name="director_tab" placeholder="1237">
+
+				<label class="req">ФИО администратора</label>
+				<input type="text" name="admin_name" placeholder="Админов А.А." required>
+
+				<label class="req">Аварийная почта (админ)</label>
+				<input type="email" name="admin_email" placeholder="admin@yandex.ru" required>
+				<div class="hint">Только Яндекс. Почта! На неё — восстановление.</div>
+
+				<label>Табельный номер администратора</label>
+				<input type="text" name="admin_tab" placeholder="1238">
+			</div>
+
+			<div class="section">
+				<div class="section-title">Токен Яндекс.Диска</div>
+				<label class="req">Токен</label>
+				<input type="text" name="yandex_token" placeholder="y0__..." required>
+				<div class="hint">Инструкция — в отдельном файле. Получите на oauth.yandex.ru</div>
+			</div>
+
+			<div class="section">
+				<div class="section-title">Работа</div>
+				<label>Максимум одновременно работающих</label>
+				<select name="max_concurrent">
+					<option value="1">1</option>
+					<option value="2">2</option>
+					<option value="3" selected>3</option>
+					<option value="5">5</option>
+					<option value="10">10</option>
+				</select>
+			</div>
+
+			<div class="section">
+				<div class="section-title">Лицензионное соглашение</div>
+				<div class="license">
+					<p><b>Лицензионное соглашение</b></p>
+					<p>Данный продукт — «Inventory Server» — находится в стадии разработки. Это тестовая версия.</p>
+					<p>Продукт не предназначен для коммерческого использования в больших объёмах.</p>
+					<p>Продукт является любительской разработкой — аналогом 1С для внутреннего использования.</p>
+					<p>Соглашаясь с использованием:</p>
+					<ul>
+						<li>Претензии по потере данных ложатся на пользователя.</li>
+						<li>Разработчик не несёт ответственности за ущерб.</li>
+						<li>Данные хранятся на вашем сервере и в облаке (Яндекс.Диск).</li>
+					</ul>
+				</div>
+				<div class="checkbox-row">
+					<input type="checkbox" id="agree" required>
+					<label for="agree" style="margin: 0;">Я согласен с условиями лицензионного соглашения</label>
+				</div>
+			</div>
+
+			<button type="submit" class="btn">Завершить настройку</button>
+			<div id="msg" class="msg"></div>
+		</form>
+	</div>
+
+	<script>
+		const form = document.getElementById('setupForm');
+		const msg = document.getElementById('msg');
+
+		form.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			msg.className = 'msg';
+			msg.textContent = 'Отправка...';
+
+			const data = new FormData(form);
+			try {
+				const resp = await fetch('/api/setup', { method: 'POST', body: data });
+				const text = await resp.text();
+				if (resp.ok) {
+					msg.className = 'msg ok';
+					msg.textContent = '✅ ' + text;
+					setTimeout(() => { window.location.href = '/'; }, 2000);
+				} else {
+					msg.className = 'msg err';
+					msg.textContent = '❌ ' + text;
+				}
+			} catch (err) {
+				msg.className = 'msg err';
+				msg.textContent = '❌ Ошибка сети: ' + err.message;
+			}
+		});
+	</script>
+</body>
+</html>

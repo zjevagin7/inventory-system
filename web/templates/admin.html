@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Админ-панель</title>
+	<style>
+		* { box-sizing: border-box; }
+		body { font-family: -apple-system, Roboto, sans-serif; margin: 0; padding: 20px;
+			background: #f5f5f5; color: #222; }
+		h1 { color: #d32f2f; margin: 0 0 20px; }
+		.box { background: #fff; border-radius: 12px; padding: 20px;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
+		h2 { margin: 0 0 15px; font-size: 18px; }
+		table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+		th, td { padding: 8px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+		th { background: #f9f9f9; font-weight: 600; }
+		input, select { padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; width: 100%; }
+		.btn { display: inline-block; background: #4CAF50; color: #fff;
+			padding: 8px 16px; border-radius: 6px; text-decoration: none;
+			margin-right: 5px; border: none; cursor: pointer; font-size: 14px; }
+		.btn:hover { background: #388E3C; }
+		.btn-red { background: #d32f2f; }
+		.btn-red:hover { background: #b71c1c; }
+		.btn-blue { background: #1976D2; }
+		.btn-blue:hover { background: #1565C0; }
+		.btn-sm { padding: 4px 10px; font-size: 12px; }
+		.msg { padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; display: none; }
+		.msg.ok { background: #E8F5E9; color: #2E7D32; display: block; }
+		.msg.err { background: #FFEBEE; color: #C62828; display: block; }
+	</style>
+</head>
+<body>
+	<h1>⚙️ Админ-панель</h1>
+
+	<div class="box">
+		<h2>👥 Пользователи</h2>
+		<div id="users">Загрузка...</div>
+		<h3>➕ Добавить пользователя</h3>
+		<form id="addUserForm">
+			<input type="email" name="email" placeholder="почта@yandex.ru" required>
+			<input type="text" name="name" placeholder="ФИО" required>
+			<select name="role">
+				<option value="admin">Админ</option>
+				<option value="accountant">Бухгалтер</option>
+				<option value="chief">Начальник службы</option>
+				<option value="storekeeper">Кладовщик</option>
+				<option value="director">Директор</option>
+			</select>
+			<input type="text" name="tab_number" placeholder="Табельный номер">
+			<input type="password" name="password" placeholder="Пароль" required>
+			<button type="submit" class="btn">Добавить</button>
+		</form>
+		<div id="userMsg" class="msg"></div>
+	</div>
+
+	<div class="box">
+		<h2>📁 Проекты</h2>
+		<div id="projects">Загрузка...</div>
+		<h3>➕ Добавить проект</h3>
+		<form id="addProjectForm">
+			<input type="text" name="name" placeholder="Название" required>
+			<button type="submit" class="btn">Создать</button>
+		</form>
+		<div id="projMsg" class="msg"></div>
+	</div>
+
+	<div class="box">
+		<h2>💾 Бэкапы</h2>
+		<div id="backups">Загрузка...</div>
+		<button onclick="createBackup()" class="btn">Создать бэкап сейчас</button>
+		<div id="backupMsg" class="msg"></div>
+	</div>
+
+	<div class="box">
+		<h2>🔑 Токен Яндекс.Диска</h2>
+		<div id="tokenInfo">Загрузка...</div>
+		<form id="tokenForm">
+			<input type="text" name="token" placeholder="y0__..." required>
+			<button type="submit" class="btn">Обновить токен</button>
+		</form>
+		<div id="tokenMsg" class="msg"></div>
+	</div>
+
+	<p><a href="/app" class="btn btn-blue">← Назад</a></p>
+
+	<script>
+		async function loadUsers() {
+			const r = await fetch('/api/admin/users');
+			const users = await r.json();
+			let html = '<table><tr><th>Почта</th><th>Имя</th><th>Роль</th><th>Табельный</th><th>Активен</th><th>Последний вход</th><th></th></tr>';
+			for (const [email, u] of Object.entries(users)) {
+				html += '<tr>' +
+					'<td><input value="' + email + '" id="email_' + email + '"></td>' +
+					'<td><input value="' + u.name + '" id="name_' + email + '"></td>' +
+					'<td><select id="role_' + email + '">' +
+						['admin','accountant','chief','storekeeper','director'].map(r =>
+							'<option value="' + r + '"' + (u.role === r ? ' selected' : '') + '>' + r + '</option>').join('') +
+					'</select></td>' +
+					'<td><input value="' + (u.tab_number || '') + '" id="tab_' + email + '"></td>' +
+					'<td><input type="checkbox" id="active_' + email + '"' + (u.active ? ' checked' : '') + '></td>' +
+					'<td>' + (u.last_login ? new Date(u.last_login).toLocaleString('ru') : '—') + '</td>' +
+					'<td>' +
+						'<button onclick="updateUser(\'' + email + '\')" class="btn btn-sm">💾</button>' +
+						'<button onclick="deleteUser(\'' + email + '\')" class="btn btn-sm btn-red">🗑️</button>' +
+					'</td>' +
+				'</tr>';
+			}
+			html += '</table>';
+			document.getElementById('users').innerHTML = html;
+		}
+		async function updateUser(oldEmail) {
+			const body = new URLSearchParams({
+				old_email: oldEmail,
+				email: document.getElementById('email_' + oldEmail).value,
+				name: document.getElementById('name_' + oldEmail).value,
+				role: document.getElementById('role_' + oldEmail).value,
+				tab_number: document.getElementById('tab_' + oldEmail).value,
+				active: document.getElementById('active_' + oldEmail).checked ? 'true' : 'false'
+			});
+			const r = await fetch('/api/admin/users/update', {method: 'POST', body});
+			showMsg('userMsg', await r.text(), r.ok);
+			loadUsers();
+		}
+		async function deleteUser(email) {
+			if (!confirm('Удалить ' + email + '?')) return;
+			const body = new URLSearchParams({email});
+			const r = await fetch('/api/admin/users/delete', {method: 'POST', body});
+			showMsg('userMsg', await r.text(), r.ok);
+			loadUsers();
+		}
+		async function loadProjects() {
+			const r = await fetch('/api/admin/projects/list');
+			const projects = await r.json();
+			let html = '<table><tr><th>ID</th><th>Название</th><th>Статус</th><th></th></tr>';
+			for (const p of projects) {
+				html += '<tr>' +
+					'<td>' + p.id + '</td>' +
+					'<td><input value="' + p.name + '" id="pname_' + p.id + '"></td>' +
+					'<td>' + p.status + '</td>' +
+					'<td>' +
+						'<button onclick="renameProject(\'' + p.id + '\')" class="btn btn-sm">✏️</button>' +
+						'<button onclick="deleteProject(\'' + p.id + '\')" class="btn btn-sm btn-red">🗑️</button>' +
+					'</td>' +
+				'</tr>';
+			}
+			html += '</table>';
+			document.getElementById('projects').innerHTML = html;
+		}
+		async function renameProject(id) {
+			const name = document.getElementById('pname_' + id).value;
+			const body = new URLSearchParams({id, name});
+			const r = await fetch('/api/admin/projects/rename', {method: 'POST', body});
+			showMsg('projMsg', await r.text(), r.ok);
+		}
+		async function deleteProject(id) {
+			if (!confirm('Удалить проект ' + id + '?')) return;
+			const body = new URLSearchParams({id});
+			const r = await fetch('/api/admin/projects/delete', {method: 'POST', body});
+			showMsg('projMsg', await r.text(), r.ok);
+			loadProjects();
+		}
+		async function loadBackups() {
+			const r = await fetch('/api/admin/backups');
+			const backups = await r.json();
+			let html = '<table><tr><th>Файл</th><th>Дата</th><th>Размер</th><th></th></tr>';
+			for (const b of backups) {
+				html += '<tr><td>' + b.name + '</td><td>' + b.date + '</td><td>' + b.size + '</td>' +
+					'<td><a href="/api/admin/backups?download=1&name=' + b.name + '" class="btn btn-sm btn-blue">⬇️</a></td></tr>';
+			}
+			if (backups.length === 0) html += '<tr><td colspan="4">Нет бэкапов</td></tr>';
+			html += '</table>';
+			document.getElementById('backups').innerHTML = html;
+		}
+		async function createBackup() {
+			showMsg('backupMsg', 'Создаётся...', true);
+			const r = await fetch('/api/admin/backup/create', {method: 'POST'});
+			showMsg('backupMsg', await r.text(), r.ok);
+			loadBackups();
+		}
+		async function loadToken() {
+			const r = await fetch('/api/admin/token/get');
+			if (r.ok) {
+				const t = await r.text();
+				document.getElementById('tokenInfo').innerHTML = 'Текущий: <code>' + t.substring(0, 20) + '...</code>';
+			} else {
+				document.getElementById('tokenInfo').innerHTML = 'Токен не установлен';
+			}
+		}
+		function showMsg(id, text, ok) {
+			const el = document.getElementById(id);
+			el.className = 'msg ' + (ok ? 'ok' : 'err');
+			el.textContent = text;
+			setTimeout(() => { el.className = 'msg'; }, 3000);
+		}
+		document.getElementById('addUserForm').addEventListener('submit', async (e) => {
+			e.preventDefault();
+			const body = new URLSearchParams(new FormData(e.target));
+			const r = await fetch('/api/admin/users/add', {method: 'POST', body});
+			showMsg('userMsg', await r.text(), r.ok);
+			e.target.reset();
+			loadUsers();
+		});
+		document.getElementById('addProjectForm').addEventListener('submit', async (e) => {
+			e.preventDefault();
+			const body = new URLSearchParams(new FormData(e.target));
+			const r = await fetch('/api/admin/projects/add', {method: 'POST', body});
+			showMsg('projMsg', await r.text(), r.ok);
+			e.target.reset();
+			loadProjects();
+		});
+		document.getElementById('tokenForm').addEventListener('submit', async (e) => {
+			e.preventDefault();
+			const body = new URLSearchParams(new FormData(e.target));
+			const r = await fetch('/api/admin/token/set', {method: 'POST', body});
+			showMsg('tokenMsg', await r.text(), r.ok);
+			e.target.reset();
+			loadToken();
+		});
+		loadUsers();
+		loadProjects();
+		loadBackups();
+		loadToken();
+	</script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Я Организация</title>
+	<style>
+		* { box-sizing: border-box; }
+		body {
+			font-family: -apple-system, Roboto, sans-serif;
+			margin: 0; padding: 0;
+			background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+			min-height: 100vh;
+			display: flex; align-items: center; justify-content: center;
+		}
+		.container {
+			background: #fff; border-radius: 20px; padding: 40px;
+			max-width: 500px; width: 90%;
+			box-shadow: 0 20px 60px rgba(0,0,0,0.15); text-align: center;
+		}
+		.logo { max-width: 120px; margin: 0 auto 20px; display: block; }
+		h1 { font-size: 28px; margin: 0 0 10px; color: #d32f2f; letter-spacing: -1px; }
+		.org-name { font-size: 20px; font-weight: 600; color: #333; margin: 0 0 5px; }
+		.org-inn { font-size: 14px; color: #777; margin: 0 0 30px; }
+		.greeting { font-size: 16px; color: #555; margin: 0 0 10px; }
+		.subtitle { font-size: 14px; color: #999; margin: 0 0 30px; }
+		.btn { display: inline-block; background: #fc3f1d; color: #fff;
+			padding: 14px 40px; border-radius: 10px; text-decoration: none;
+			font-size: 16px; font-weight: 600; border: none; cursor: pointer; width: 100%; }
+		.btn:hover { background: #e03517; }
+		.input { width: 100%; padding: 12px; font-size: 16px;
+			border: 1px solid #ccc; border-radius: 8px; background: #fafafa; margin-bottom: 10px; }
+		.input:focus { outline: none; border-color: #fc3f1d; background: #fff; }
+		.msg { padding: 12px; border-radius: 8px; margin-top: 12px; font-size: 14px; display: none; }
+		.msg.ok { background: #E8F5E9; color: #2E7D32; display: block; }
+		.msg.err { background: #FFEBEE; color: #C62828; display: block; }
+		.device { margin-top: 30px; font-size: 12px; color: #bbb; }
+	</style>
+</head>
+<body>
+	<div class="container">
+		{{if .Logo}}<img class="logo" src="/static/img/logo.png" alt="Логотип">{{end}}
+		<h1>Я Организация</h1>
+		<p class="org-name">{{.Name}}</p>
+		<p class="org-inn">ИНН {{.INN}}</p>
+		<p class="greeting">Здравствуйте, я ваш сервер.</p>
+		<p class="subtitle">Программа «Inventory Server»</p>
+		<form id="loginForm">
+			<input class="input" type="email" id="email" placeholder="admin@yandex.ru" required>
+			<input class="input" type="password" id="password" placeholder="Пароль" required>
+			<button type="submit" class="btn">Войти</button>
+		</form>
+		<div id="msg" class="msg"></div>
+		<div class="device"><div>Работает на Micromax Q415</div></div>
+	</div>
+	<script>
+		const form = document.getElementById('loginForm');
+		const msg = document.getElementById('msg');
+		form.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			msg.className = 'msg'; msg.textContent = 'Проверка...';
+			const email = document.getElementById('email').value;
+			const password = document.getElementById('password').value;
+			const body = 'email=' + encodeURIComponent(email) + '&password=' + encodeURIComponent(password);
+			try {
+				const resp = await fetch('/api/login', {
+					method: 'POST',
+					headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+					body: body
+				});
+				const text = await resp.text();
+				if (resp.ok) {
+					msg.className = 'msg ok'; msg.textContent = '✅ ' + text;
+					setTimeout(() => { window.location.href = '/app'; }, 1500);
+				} else {
+					msg.className = 'msg err'; msg.textContent = '❌ ' + text;
+				}
+			} catch (err) {
+				msg.className = 'msg err'; msg.textContent = '❌ ' + err.message;
+			}
+		});
+	</script>
+</body>
+</html>

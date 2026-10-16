@@ -1,0 +1,13 @@
+[Unit]
+Description=Inventory Export Service (ALPHA)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/inventory
+ExecStart=/usr/bin/python3 /opt/inventory/export_service.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,10 @@
+# Бинарники
+inventory-web
+*.exe
+
+# Логи
+*.log
+server.log
+
+# Кэш
+*.test
